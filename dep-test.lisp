@@ -51,7 +51,7 @@
 ;;; ----------------------------------------------------------
 
 (defun test-mc-updates-gf ()
-  (format t "~%=== Test 1: Method Combination → Generic Function ===~%")
+  (format t "~%=== Test 1: Method Combination -> Generic Function ===~%")
 
   ;; Step 1: MC v1
   (define-versioned-mc *mc-test-name* :v1)
@@ -85,7 +85,7 @@
 ;;; ----------------------------------------------------------
 
 (defun test-gf-updates-mc ()
-  (format t "~%=== Test 2: Generic Function → Method Combination ===~%")
+  (format t "~%=== Test 2: Generic Function -> Method Combination ===~%")
 
   ;; Step 1: MC v1
   (define-versioned-mc *mc2-test-name* :v1)
