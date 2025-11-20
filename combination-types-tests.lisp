@@ -47,7 +47,7 @@ do (log (format nil "~a" (list sym (fboundp sym)))))
 ;;; -------------------------------------------------------------------
 ;;; 1. Define a short and a long method combination
 ;;; -------------------------------------------------------------------
-(define-method-combination my-sum
+#+nil(define-method-combination my-sum
     (&optional (order :most-specific-first))
   ((around  (:around))
    (before  (:before) :order order)
@@ -76,8 +76,41 @@ do (log (format nil "~a" (list sym (fboundp sym)))))
                       (,@(rest around) (make-method ,combined)))
         combined)))
 
+(define-method-combination my-sum
+    (&optional (order :most-specific-first))
+  ((around  (:around))
+   (before  (:before) :order order)
+   (primary ()        :order order :required t)
+   (after   (:after)  :order order))
+  (:method-combination-class long-method-combination)
+  (:generic-function gf)
+  ;; Body:
+  (let* ((before-form
+          (if before
+              `(+ ,@(mapcar (lambda (m) `(call-method ,m)) before))
+              0))
+         (primary-form
+          (if (rest primary)
+              `(+ ,@(mapcar (lambda (m) `(call-method ,m)) primary))
+              `(call-method ,(first primary))))
+         (after-form
+          (if after
+              `(+ ,@(mapcar (lambda (m) `(call-method ,m)) after))
+              0))
+         (combined
+          `(+ ,before-form ,primary-form ,after-form)))
+    (if around
+        ;; Let the first :around method wrap the combined computation.
+        ;; Remaining :around methods are passed as the method list,
+        ;; and the inner computation is provided via MAKE-METHOD.
+        `(call-method ,(first around)
+                      (,@(rest around) (make-method ,combined)))
+        combined)))
 
 
+
+;; (find-method-combination* method-combination-tests:my-sum)
+;; (apropos "my-sum")
 (define-method-combination my-max
   :operator max
   :identity-with-one-argument t)
