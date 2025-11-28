@@ -1,6 +1,6 @@
 ;;;; ------------------------------------------------------------------
 ;;;; Test suite for portable method combination implementation
-;;;; load with: :cl src/org/armedbear/lisp/combination-types-tests.lisp
+;;;; load with: :cl src/org/armedbear/lisp/mop-test-suites/combination-types-tests.lisp
 ;;;; (method-combination-tests:run-symbol-bound-check)
 ;;;; ------------------------------------------------------------------
 
@@ -47,35 +47,6 @@ do (log (format nil "~a" (list sym (fboundp sym)))))
 ;;; -------------------------------------------------------------------
 ;;; 1. Define a short and a long method combination
 ;;; -------------------------------------------------------------------
-#+nil(define-method-combination my-sum
-    (&optional (order :most-specific-first))
-  ((around  (:around))
-   (before  (:before) :order order)
-   (primary ()        :order order :required t)
-   (after   (:after)  :order order))
-  ;; Body builds the effective method form:
-  (let* ((before-form
-          (if before
-              `(+ ,@(mapcar (lambda (m) `(call-method ,m)) before))
-              0))
-         (primary-form
-          (if (rest primary)
-              `(+ ,@(mapcar (lambda (m) `(call-method ,m)) primary))
-              `(call-method ,(first primary))))
-         (after-form
-          (if after
-              `(+ ,@(mapcar (lambda (m) `(call-method ,m)) after))
-              0))
-         (combined
-          `(+ ,before-form ,primary-form ,after-form)))
-    (if around
-        ;; Let the first :around method wrap the combined computation.
-        ;; Remaining :around methods are passed as the method list,
-        ;; and the inner computation is provided via MAKE-METHOD.
-        `(call-method ,(first around)
-                      (,@(rest around) (make-method ,combined)))
-        combined)))
-
 (define-method-combination my-sum
     (&optional (order :most-specific-first))
   ((around  (:around))
@@ -83,7 +54,7 @@ do (log (format nil "~a" (list sym (fboundp sym)))))
    (primary ()        :order order :required t)
    (after   (:after)  :order order))
   (:method-combination-class long-method-combination)
-  (:generic-function gf)
+  ;;:generic-function gf
   ;; Body:
   (let* ((before-form
           (if before
@@ -119,10 +90,10 @@ do (log (format nil "~a" (list sym (fboundp sym)))))
 ;;; 2a. Tests for the long
 ;;; -------------------------------------------------------------------
 (defgeneric test-sum (x y)
-  (:method-combination my-sum))
+  (:method-combination my-sum :most-specific-last))
 
 ;;; Primary methods
-(defmethod test-sum ((x number) (y number))
+(defmethod test-sum my-sum ((x number) (y number))
   (+ x y))
 
 ;;; Around and before methods (should combine additively)
@@ -200,14 +171,17 @@ do (log (format nil "~a" (list sym (fboundp sym)))))
 (defun run-method-combination-tests ()
   (log "Running method-combination tests...")
   
-    ;; BEGIN LONG FORM TESTS
-    (run-long-combination-tests)
+  (log "BEGIN LONG FORM TESTS")
+  (run-long-combination-tests)
+  (log "LONG FORM TESTS OK")
 
-    ;; BEGIN SHORT FORM TESTS
-    (run-short-combination-tests)
+  
+  (log "BEGIN SHORT FORM TESTS")
+  (run-short-combination-tests)
+  (log "SHORT FORM TESTS OK")
   
   (log "All tests passed successfully.")
-      t)
+  t)
 
 
 (run-method-combination-tests)
